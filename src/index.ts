@@ -1,3 +1,37 @@
+type Project = {
+  id?: string,
+  title: string,
+  description: string,
+  people: number
+};
+
+class ProjectState {
+  private projects: Project[] = [];
+  private static instance: ProjectState;
+
+  private constructor() {
+
+  }
+
+  public add(project: Project) {
+    const newProject = {
+      ...project,
+      id: <string>Math.random().toString(),
+    }
+
+    this.projects.push(newProject);
+  }
+
+  static getInstance() {
+    if (!this.instance) {
+      this.instance = new ProjectState();
+    }
+    return this.instance
+  }
+}
+
+const projectState = ProjectState.getInstance();
+
 function autobind(_: any, _2: string, descriptor: PropertyDescriptor) {
   const originalMethod = descriptor.value;
   const adjDescriptor: PropertyDescriptor = {
@@ -7,6 +41,39 @@ function autobind(_: any, _2: string, descriptor: PropertyDescriptor) {
     },
   };
   return adjDescriptor;
+}
+
+class ProjectList {
+  templateElement;
+  hostElement;
+  element;
+
+  constructor(private type: 'active' | 'finished'){
+    this.templateElement = <HTMLTemplateElement>(
+      document.querySelector('#project-list')
+    );
+    this.hostElement = <HTMLDivElement>document.querySelector('#app');
+
+    const importedNode = document.importNode(
+      this.templateElement.content,
+      true
+    );
+    this.element = <HTMLElement>importedNode.firstElementChild;
+    this.element.id = `${this.type}-projects`;
+
+    this.render(this.hostElement, this.element);
+    this.renderContent(this.type.toUpperCase() + ' PROJECTS');
+  }
+
+  private renderContent(title: string) {
+    const listId = `${this.type}-project-list`;
+    this.element.querySelector('ul')!.id = listId;
+    this.element.querySelector('h2')!.textContent = title;
+  }
+
+  private render(hostElement: HTMLElement, element: HTMLElement) {
+    hostElement.append(element);
+  }
 }
 
 class ProjectInput {
@@ -40,9 +107,8 @@ class ProjectInput {
       this.element.querySelector('#people')
     );
 
-    this.clearInputs();
     this.configure(this.element);
-    this.render(this.element);
+    this.render(this.hostElement, this.element);
   }
 
   private getUserInputs(): [string, string, number] | void {
@@ -68,9 +134,10 @@ class ProjectInput {
   private submitHandler(event: Event) {
     event.preventDefault();
     const userInput = this.getUserInputs();
-    // console.log(this.titleInputElement.value);
     if (Array.isArray(userInput)) {
       const [title, description, people] = userInput;
+      console.log(title, description, people);
+      this.clearInputs();
     }
   }
 
@@ -78,10 +145,12 @@ class ProjectInput {
     element.addEventListener('submit', this.submitHandler);
   }
 
-  private render(element: HTMLElement) {
-    this.hostElement.prepend(element);
+  private render(hostElement: HTMLElement, element: HTMLElement) {
+    hostElement.append(element);
   }
 }
 
 const input = new ProjectInput();
+const activeProject = new ProjectList('active');
+const finishedProject = new ProjectList('finished');
 console.log(input);
